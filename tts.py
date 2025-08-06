@@ -29,12 +29,13 @@ class _TTSOptions:
 # ==============================================================================
 # This is the main plugin class that the LiveKit agent will interact with.
 # ==============================================================================
+# voice: str = "expresso/ex03-ex01_happy_001_channel1_334s.wav"
 class TTS(tts.TTS):
     def __init__(
         self,
         *,
-        voice: str = "hindi-159",
-        denoise: bool = True,
+        voice: str = "expresso/ex03-ex01_happy_001_channel1_334s.wav",
+        denoise: bool = False,
         base_url: str,
     ):
         super().__init__(
@@ -45,6 +46,9 @@ class TTS(tts.TTS):
         self._client = httpx.AsyncClient(timeout=60.0)
         self._base_url = base_url
         self._opts = _TTSOptions(voice=voice, denoise=denoise)
+        
+    async def close(self):
+        await self._client.aclose()
 
     def synthesize(self, text: str, *, conn_options: APIConnectOptions = DEFAULT_API_CONNECT_OPTIONS) -> "ChunkedStream":
         """
@@ -56,7 +60,8 @@ class TTS(tts.TTS):
             input_text=text,
             conn_options=conn_options,
         )
-
+        
+    
 # ==============================================================================
 # This class handles the actual API call and streaming of audio data.
 # It now correctly inherits from ChunkedStream.
@@ -87,9 +92,8 @@ class ChunkedStream(tts.ChunkedStream):
             )
 
             payload = {
-                "input": self.input_text,
+                "text": self.input_text,
                 "voice": self._tts._opts.voice,
-                "denoise": self._tts._opts.denoise,
             }
 
             async with self._tts._client.stream(
