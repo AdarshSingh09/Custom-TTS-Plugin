@@ -34,7 +34,8 @@ class TTS(tts.TTS):
     def __init__(
         self,
         *,
-        voice: str = "expresso/ex03-ex01_happy_001_channel1_334s.wav",
+        api_key: str,
+        voice: str = "6008",
         denoise: bool = False,
         base_url: str,
     ):
@@ -46,6 +47,7 @@ class TTS(tts.TTS):
         self._client = httpx.AsyncClient(timeout=60.0)
         self._base_url = base_url
         self._opts = _TTSOptions(voice=voice, denoise=denoise)
+        self._api_key = api_key
         
     async def close(self):
         await self._client.aclose()
@@ -91,15 +93,26 @@ class ChunkedStream(tts.ChunkedStream):
                 mime_type="audio/raw",  # Match our FastAPI server's output
             )
 
+            headers = {"X-API-Key": self._tts._api_key,
+                       "Content-Type": "application/json",
+                       }
+            
+            
             payload = {
                 "text": self.input_text,
-                "voice": self._tts._opts.voice,
+                "speaker_no": int(self._tts._opts.voice),
+                "config": {
+                    "use_streaming_response": True,
+                    "sample_rate": 24000,
+                },
             }
+
 
             async with self._tts._client.stream(
                 "POST",
-                f"{self._tts._base_url}/v1/audio/speech",
+                f"{self._tts._base_url}/tts",
                 json=payload,
+                headers=headers,
             ) as response:
                 
                 response.raise_for_status()

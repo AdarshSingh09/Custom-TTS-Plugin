@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # LiveKit Agents imports
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
-from livekit.plugins import silero, google, deepgram
+from livekit.plugins import silero, google, deepgram, sarvam
 from livekit.agents import metrics  
 from livekit.agents.voice import MetricsCollectedEvent
 
@@ -22,21 +22,21 @@ load_dotenv()
 class MyAssistant(Agent):
     def __init__(self) -> None:
         # --- CONFIGURE YOUR SERVER'S IP ADDRESS HERE ---
-        EC2_SERVER_URL = "http://13.201.130.175:8000" # Replace with your EC2 Public IP
+        EC2_SERVER_URL = "https://audio.dubverse.ai/api" # Replace with your EC2 Public IP
 
         # Create an instance of our custom TTS plugin
         custom_tts = TTS(
+            api_key="rdlNCp9H7tma9hMRvvF77k29VLEYpgbu",
+            voice="200",
             base_url=EC2_SERVER_URL,
         )
 
         super().__init__(
-            stt=deepgram.STT(
-                model="nova-3",
-            ),
+            stt=sarvam.STT(language="kn-IN", model="saarika:v2.5"),
             vad=silero.VAD.load(),
-            llm=google.LLM(model="gemini-1.5-flash"),
+            llm=google.LLM(model="gemini-2.5-flash"),
             tts=custom_tts,
-            instructions="You are a helpful and friendly voice assistant. Your goal is to assist users with their questions. Keep your responses concise and conversational.",
+            instructions="ನೀನು ಸಹಾಯಕ ಹಾಗೂ ಸ್ನೇಹಪೂರ್ಣ ಧ್ವನಿ ಸಹಾಯಕನು. ಬಳಕೆದಾರರು ಕೇಳುವ ಪ್ರಶ್ನೆಗಳಿಗೆ ಸಹಾಯ ಮಾಡುವುದೇ ನಿನ್ನ ಉದ್ದೇಶ. ನಿನ್ನ ಉತ್ತರಗಳು ಸರಳವಾಗಿದ್ದು, ಮಾತಿನಶೈಲಿಯಲ್ಲಿ ಇರಲಿ.",
         )
 
     async def on_enter(self):
@@ -44,7 +44,7 @@ class MyAssistant(Agent):
         A callback that is executed when the agent first joins the room.
         Used here to greet the user.
         """
-        await self.session.say("Hello! How can I help you today?")
+        await self.session.say("ನಮಸ್ಕಾರ! ನಾನು ಇಂದು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?")
 
 async def entrypoint(ctx: JobContext):
     """
